@@ -1,0 +1,66 @@
+block vars
+	-
+		var title = typeof title !== 'undefined' ? title : null;
+-
+	var baseDir = 'assets/';
+
+mixin image(src)
+	picture
+		img(class!=attributes.class src="assets/upload/" + src alt="")
+
+doctype html
+html
+	head
+		if title !== null
+			title= title + " | Название проекта"
+		link(rel="stylesheet" href=`${baseDir}css/main.min.css?v=${Date.now()}`)
+		link(rel="stylesheet" href=`${baseDir}css/blocks.min.css?v=${Date.now()}`)
+		meta(charset="UTF-8")
+		meta(http-equiv="X-UA-Compatible" content="IE=edge")
+		meta(name="viewport" content="width=device-width, initial-scale=1")
+		link(rel="icon" href="favicon.ico")
+
+	body
+
+		include ./include/header.pug
+
+		main.main
+			block content
+			include ./include/modal.pug
+		block scripts
+			script(src=`https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=eb505fe6-1302-4c4e-8cbc-e50446915e83`)
+			script(src=`${baseDir}js/libs.min.js?v=${Date.now()}`)
+			script(src=`${baseDir}js/scripts.min.js?v=${Date.now()}`)
+			//script.
+			//	$('input[name="f_phone"]').mask("+7 (999) 999-99-99");
+			script.
+			script.
+				window.onload = function () {
+					setTimeout(function () {
+						if ($("div").is("#map")) {
+						ymaps.ready(function () {
+						const coord = [55.778274, 37.521354],
+						myMap = new ymaps.Map("map", {
+						center: coord,
+						zoom: 16,
+						controls: ["zoomControl"],
+						}),
+						myPlacemarkWithContent = new ymaps.Placemark(
+						[55.778274, 37.521354],
+						{
+						hintContent: "Хорошевское шоссе 82, офис 8",
+						},
+						{
+						iconLayout: "default#imageWithContent",
+						iconImageHref: "/assets/upload/map.svg",
+						iconImageSize: [44, 47],
+						iconImageOffset: [-22, -48],
+						}
+						);
+						myMap.geoObjects.add(myPlacemarkWithContent);
+						myMap.behaviors.disable("scrollZoom");
+
+						});
+						};
+				}, 6000);};
+
