@@ -2,11 +2,11 @@ block vars
 	-
 		var title = typeof title !== 'undefined' ? title : null;
 -
-	var baseDir = 'assets/';
+	var baseDir = '/assets/';
 
 mixin image(src)
 	picture
-		img(class!=attributes.class src="assets/upload/" + src alt="")
+		img(class!=attributes.class src="/assets/upload/" + src alt="")
 
 doctype html
 html

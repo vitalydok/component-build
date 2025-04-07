@@ -18,70 +18,9 @@ var gulp = require("gulp"),
     extReplace = require("gulp-ext-replace"),
     babel = require("gulp-babel"),
     webp = require("imagemin-webp"),
-    through = require('through2'),
-    path = require('path'),
-    fs = require('fs'),
-    sharp = require('sharp');
+    newer = require("gulp-newer");
 
 let pathBuild = "./app/";
-
-// Функция для добавления атрибутов width/height к изображениям
-function addImageAttributes() {
-    return through.obj(async function (file, encoding, callback) {
-        if (file.isNull()) {
-            return callback(null, file);
-        }
-
-        const projectRoot = process.cwd();
-        const appPath = path.join(projectRoot, 'app');
-        let content = file.contents.toString();
-
-        const imgRegex = /<img[^>]+src="([^"]+)"[^>]*?(?:(?!width=|height=))[^>]*?>/gi;
-        let matchCount = 0;
-        let successCount = 0;
-        const matches = [...content.matchAll(imgRegex)];
-        for (const match of matches) {
-            const imgTag = match[0];
-            const srcMatch = imgTag.match(/src="([^"]+)"/);
-            if (!srcMatch) continue;
-
-            let src = srcMatch[1];
-            matchCount++;
-            if (imgTag.includes('width=') || imgTag.includes('height=')) {
-                continue;
-            }
-
-            let fullPath = src.startsWith('/')
-                ? path.join(appPath, src.substring(1))
-                : path.join(path.dirname(file.path), src);
-
-            if (path.extname(fullPath).toLowerCase() === '.svg') {
-                continue;
-            }
-
-            if (!fs.existsSync(fullPath)) {
-                continue;
-            }
-
-            try {
-                const metadata = await sharp(fullPath).metadata();
-                if (metadata.width && metadata.height) {
-                    const modifiedImgTag = imgTag.replace(
-                        /(\s*?)(\/?>\s*?)$/,
-                        ` width="${metadata.width}" height="${metadata.height}"$1$2`
-                    );
-                    content = content.replace(imgTag, modifiedImgTag);
-                    successCount++;
-                }
-            } catch (err) {
-                console.warn(`Ошибка обработки изображения: ${fullPath}`, err);
-            }
-        }
-
-        file.contents = Buffer.from(content);
-        callback(null, file);
-    });
-}
 
 // SASS компиляция
 gulp.task("sass", function () {
@@ -175,20 +114,13 @@ gulp.task("pug", function () {
 
 // Оптимизация изображений
 gulp.task("img", function () {
-    return gulp
-        .src("app/assets/upload/**/*.+(jpg|png|jpeg)")
-        .pipe(cache(imagemin([webp({ quality: 75 })], { verbose: true })))
-        .pipe(rename({ extname: ".webp" }))
-        .pipe(gulp.dest("app/assets/upload"));
-});
-
-// Добавление атрибутов к изображениям
-module.exports = addImageAttributes;
-gulp.task("attr", function () {
-    return gulp.src("app/*.html")
-        .pipe(newer("app")) // Проверяет, изменялся ли файл
-        .pipe(addImageAttributes())
-        .pipe(gulp.dest('app'));
+  return gulp
+    .src("app/assets/upload/**/*.+(jpg|png|jpeg)")
+    .pipe(imagemin([
+      webp({ quality: 75 })
+    ], { verbose: true }))
+    .pipe(rename({ extname: ".webp" }))
+    .pipe(gulp.dest("app/assets/upload"));
 });
 
 // Перенос файлов для production
@@ -199,6 +131,89 @@ gulp.task("upload", function () {
 gulp.task("image", function () {
     return gulp.src("app/assets/image/**/*").pipe(gulp.dest("dist/assets/image"));
 });
+
+const through = require('through2');
+const path = require('path');
+const fs = require('fs');
+// const imagesize = require('imagesize');
+const sharp = require('sharp');
+
+function addImageAttributes() {
+  return through.obj(async function (file, encoding, callback) {
+    if (file.isNull()) {
+      return callback(null, file);
+    }
+
+    const projectRoot = process.cwd();
+    const appPath = path.join(projectRoot, 'app');
+    let content = file.contents.toString();
+
+    const imgRegex = /<img[^>]+src="([^"]+)"[^>]*?(?:(?!width=|height=))[^>]*?>/gi;
+
+    // console.log(`Обрабатываем файл: ${file.path}`);
+    let matchCount = 0;
+    let successCount = 0;
+
+    const matches = [...content.matchAll(imgRegex)];
+    for (const match of matches) {
+      const imgTag = match[0];
+      const srcMatch = imgTag.match(/src="([^"]+)"/);
+      if (!srcMatch) continue;
+
+      let src = srcMatch[1];
+      matchCount++;
+      // console.log(`Найдено изображение: ${src}`);
+
+      if (imgTag.includes('width=') || imgTag.includes('height=')) {
+        // console.log(`Изображение ${src} уже имеет атрибуты width или height`);
+        continue;
+      }
+
+      let fullPath = src.startsWith('/') ? path.join(appPath, src.substring(1)) : path.join(path.dirname(file.path), src);
+
+      // console.log(`Полный путь к изображению: ${fullPath}`);
+
+      if (path.extname(fullPath).toLowerCase() === '.svg') {
+        // console.log(`Пропускаем SVG: ${fullPath}`);
+        continue;
+      }
+
+      if (!fs.existsSync(fullPath)) {
+        // console.warn(`Файл не найден: ${fullPath}`);
+        continue;
+      }
+
+      try {
+        const metadata = await sharp(fullPath).metadata();
+        if (metadata.width && metadata.height) {
+          // console.log(`Размеры изображения: ${metadata.width}x${metadata.height}`);
+          
+          const modifiedImgTag = imgTag.replace(/(\s*?)(\/?>\s*?)$/, ` width="${metadata.width}" height="${metadata.height}"$1$2`);
+          content = content.replace(imgTag, modifiedImgTag);
+          successCount++;
+        } else {
+          // console.warn(`Не удалось получить размеры изображения: ${fullPath}`);
+        }
+      } catch (err) {
+        // console.warn(`Ошибка при обработке изображения: ${fullPath}`, err);
+      }
+    }
+
+    console.log(`Обработано изображений: ${matchCount}, успешно: ${successCount}`);
+
+    file.contents = Buffer.from(content);
+    callback(null, file);
+  });
+}
+
+module.exports = addImageAttributes;
+
+// Добавление атрибутов к изображениям
+gulp.task("attr", gulp.series("img", function () {
+  return gulp.src("app/*.html")
+    .pipe(addImageAttributes())
+    .pipe(gulp.dest('app'));
+}));
 
 // Подготовка к сборке
 gulp.task("prebuild", async function () {
@@ -218,11 +233,24 @@ gulp.task("clear", function (callback) {
 
 // Наблюдение за изменениями
 gulp.task("watch", function () {
-    gulp.watch(["app/pug/**/*.pug", "app/components/**/*.pug"], gulp.parallel("pug"));
-    gulp.watch(["app/sass/**/*.sass", "app/components/**/*.sass"], gulp.parallel("sass", "update-blocks"));
-    gulp.watch(["app/assets/libs/**/*.js"], gulp.parallel("libs"));
-    gulp.watch(["app/assets/js/common.js"], gulp.parallel("scripts"));
-    gulp.watch("app/assets/upload/**/*", gulp.parallel("img"));
+  gulp.watch(
+    ["app/pug/**/*.pug", "app/components/**/*.pug"],
+    gulp.parallel("pug")
+  );
+  
+  gulp.task("attr", function () {
+    return gulp.src("app/*.html")
+      .pipe(newer("app")) // Проверяет, изменялся ли файл
+      .pipe(addImageAttributes())
+      .pipe(gulp.dest("app")); // Сохраняем обратно в ту же папку
+  });
+
+  gulp.watch(
+    ["app/sass/**/*.sass", "app/components/**/*.sass"],
+    gulp.parallel("sass", "update-blocks")
+  );
+  gulp.watch(["app/assets/libs/**/*.js"], gulp.parallel("libs"));
+  gulp.watch(["app/assets/js/common.js"], gulp.parallel("scripts"));
 });
 
 // Задачи по умолчанию
