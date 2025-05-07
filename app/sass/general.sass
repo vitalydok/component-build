@@ -69,7 +69,9 @@ body
     padding-right: 17px
     @media (max-width: 992px)
       padding-right: 0
-
+.no-scroll
+  overflow: hidden
+  height: 100%
 img
   height: auto
   width: auto
@@ -419,19 +421,17 @@ article
   img + p
     margin-top: 16px
 
-.gallery-view
+
+.gallery
   .thumbnail
-    width: 200px
-    height: 150px
-    object-fit: cover
     cursor: pointer
-    margin: 5px
   &-content
     position: relative
     max-width: 90%
     max-height: 90%
     transform: scale(0.8)
     opacity: 0
+    overflow: hidden
     transition: transform 0.3s $transition, opacity 0.3s $transition
   &-overlay
     position: fixed
@@ -439,52 +439,85 @@ article
     left: 0
     width: 100%
     height: 100%
-    background: rgba(0, 0, 0, 0.8)
+    background: rgba(0, 0, 0, 0.9)
     display: flex
     justify-content: center
     align-items: center
-    z-index: 1000
+    z-index: 10000
     opacity: 0
     visibility: hidden
-    transition: opacity $transition, visibility $transition
+    transition: opacity 0.3s ease, visibility 0.3s ease
     &.active
       opacity: 1
       visibility: visible
-      .gallery-view-content
+      .gallery-content
         transform: scale(1)
         opacity: 1
   &-nav
     position: absolute
     top: 50%
     transform: translateY(-50%)
-    background: rgba(255, 255, 255, 0.5)
+    background-color: rgba(0, 0, 0, 0.5)
     border: none
-    padding: 15px
+    color: white
+    width: 40px
+    height: 40px
+    border-radius: 50%
+    font-size: 20px
     cursor: pointer
-    font-size: 24px
+    z-index: 10001
+    transition: background 0.2s ease
+    &:hover
+      background-color: rgba(0, 0, 0, 0.7)
     &--left
-      left: 10px
+      left: 20px
     &--right
-      right: 10px
+      right: 20px
   &-counter
     position: absolute
-    bottom: 10px
+    bottom: 20px
     left: 50%
     transform: translateX(-50%)
     color: white
-    font-size: 18px
+    font-size: 16px
+    background: rgba(0, 0, 0, 0.5)
+    padding: 5px 15px
+    border-radius: 20px
   &-close
     position: absolute
-    top: 10px
-    right: 10px
+    top: 20px
+    right: 20px
     background: none
     border: none
     color: white
-    font-size: 24px
+    font-size: 30px
     cursor: pointer
+    z-index: 10001
   &-image
     max-width: 100%
-    width: 100%
-    height: 100%
     max-height: 80vh
-    object-fit: contain
+    display: block
+    margin: 0 auto
+    transition: all 0.3s ease
+    will-change: transform, opacity
+
+.gallery
+  max-width: 1200px
+  width: 100%
+  margin: 0 auto
+  gap: 16px
+  &__item
+    width: 40%
+    height: 300px
+    img
+      width: 100%
+      height: 100%
+      object-fit: cover
+      object-position: center
+  &__wrapper
+    width: 60%
+    display: flex
+    gap: 16px
+    .gallery__item
+      width: calc((100% - 48px) / 4)
+

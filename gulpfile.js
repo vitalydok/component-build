@@ -70,6 +70,7 @@ gulp.task("libs", function () {
     return gulp
         .src([
             "app/assets/libs/jquery/jquery.min.js",
+            "app/assets/libs/dok-gall/dok-gall.js",
             "node_modules/swiper/swiper-bundle.min.js",
             "app/assets/libs/device/device.js",
             "app/assets/libs/mask/jquery.inputmask.min.js",
