@@ -307,7 +307,7 @@ class GalleryDok {
         const next = () => {
             if (currentIndex < totalImages - 1) {
                 currentIndex++;
-                this.changeMedia(content, mediaElement, images[currentIndex], 'next');
+                this.changeMedia(content, images[currentIndex - 1], images[currentIndex], 'next');
                 this.updateCounter(overlay, currentIndex + 1, totalImages);
             }
         };
@@ -315,7 +315,7 @@ class GalleryDok {
         const prev = () => {
             if (currentIndex > 0) {
                 currentIndex--;
-                this.changeMedia(content, mediaElement, images[currentIndex], 'prev');
+                this.changeMedia(content, images[currentIndex + 1], images[currentIndex], 'prev');
                 this.updateCounter(overlay, currentIndex + 1, totalImages);
             }
         };
@@ -418,7 +418,7 @@ class GalleryDok {
     }
 
     changeMedia(contentContainer, currentElement, newElement, direction) {
-        console.log('Смена медиа:', newElement);
+        console.log('Смена медиа:', currentElement);
         
         // Получаем URL медиа
         const mediaUrl = this.getImageUrl(newElement);
@@ -429,9 +429,19 @@ class GalleryDok {
         
         // Проверяем, YouTube это или изображение
         const isYouTube = this.isYouTubeUrl(mediaUrl);
+
+        const currentUrl = this.getImageUrl(currentElement);
+        if (!currentUrl) {
+            console.error('Невозможно получить URL медиа для', currentElement);
+            return;
+        }
+        // Проверяем, YouTube это или изображение
+        const isCurrentYouTube = this.isYouTubeUrl(currentUrl);
         
         // Очищаем контейнер
-        this.clearContent(contentContainer);
+        if (isYouTube || isCurrentYouTube) {
+            this.clearContent(contentContainer);
+        }
         
         if (isYouTube) {
             // Для YouTube создаем iframe
@@ -486,46 +496,105 @@ class GalleryDok {
     }
 
     applyFadeEffect(container, newSrc) {
+        const duration = this.settings.effects.slide.duration;
+
+        container.style.transition = `opacity ${duration}ms ease-out`;
+        container.style.opacity = '0';
+        
         const img = document.createElement('img');
         img.className = 'gallery-image';
         img.src = newSrc;
-        img.style.opacity = '0';
-        img.style.transition = `opacity ${this.settings.effects.fade.duration}ms ease-out`;
-        
-        container.appendChild(img);
+
+        // Ждём завершения анимации ухода
+        setTimeout(() => {
+            // Меняем изображение, очищаем контейнер
+            this.clearContent(container);
+            container.appendChild(img);
+        }, duration);
 
         setTimeout(() => {
-            img.style.opacity = '1';
-        }, 10);
+            container.style.opacity = '1';
+        }, duration);
     }
 
+    // applySlideEffect(container, newSrc, direction) {
+    //     container.style.position = 'relative';
+    //     container.style.overflow = 'hidden';
+
+    //     const img = document.createElement('img');
+    //     img.className = 'gallery-image';
+    //     img.src = newSrc;
+    //     img.style.position = 'absolute';
+    //     img.style.top = '0';
+    //     img.style.left = direction === 'next' ? '100%' : '-100%';
+    //     img.style.transition = `transform ${this.settings.effects.slide.duration}ms ease-out`;
+
+    //     container.appendChild(img);
+
+    //     setTimeout(() => {
+    //         img.style.transform = 'translateX(0)';
+    //     }, 10);
+
+    //     setTimeout(() => {
+    //         img.style.position = '';
+    //         img.style.top = '';
+    //         img.style.left = '';
+    //         img.style.transition = '';
+    //         img.style.transform = '';
+    //         container.style.overflow = '';
+    //     }, this.settings.effects.slide.duration);
+    // }
     applySlideEffect(container, newSrc, direction) {
+        const duration = this.settings.effects.slide.duration;
+
+        // Установка базовых стилей контейнера
         container.style.position = 'relative';
         container.style.overflow = 'hidden';
+        container.style.width = '100%';
+        container.style.transition = `transform ${duration}ms ease-out`;
+        container.style.willChange = 'transform';
 
-        const img = document.createElement('img');
-        img.className = 'gallery-image';
-        img.src = newSrc;
-        img.style.position = 'absolute';
-        img.style.top = '0';
-        img.style.left = direction === 'next' ? '100%' : '-100%';
-        img.style.transition = `transform ${this.settings.effects.slide.duration}ms ease-out`;
+        // Смещение контейнера в нужную сторону
+        const offset = direction === 'next' ? '100vw' : '-100vw';
+        container.style.transition = `transform ${duration}ms ease-out`;
+        container.style.transform = `translateX(${offset})`;
 
-        container.appendChild(img);
-
+        // Ждём завершения анимации ухода
         setTimeout(() => {
-            img.style.transform = 'translateX(0)';
-        }, 10);
+            // Меняем изображение, очищаем контейнер
+            this.clearContent(container);
 
+            const newImg = document.createElement('img');
+            newImg.className = 'gallery-image';
+            newImg.src = newSrc;
+            newImg.style.width = '100%';
+            newImg.style.height = 'auto';
+            newImg.style.display = 'block';
+            newImg.style.maxWidth = '90%';
+            newImg.style.margin = '0 auto';
+
+            container.appendChild(newImg);
+
+            // Устанавливаем контейнер в противоположную сторону мгновенно
+            container.style.transition = 'none';
+            container.style.transform = `translateX(${direction === 'next' ? '-100vw' : '100vw'})`;
+
+            // Позволяем браузеру отрисовать
+            requestAnimationFrame(() => {
+                // Возвращаем контейнер в центр с анимацией
+                container.style.transition = `transform ${duration}ms ease-out`;
+                container.style.transform = 'translateX(0)';
+            });
+        }, duration);
+
+        // Очищаем временные стили после завершения второй анимации
         setTimeout(() => {
-            img.style.position = '';
-            img.style.top = '';
-            img.style.left = '';
-            img.style.transition = '';
-            img.style.transform = '';
-            container.style.overflow = '';
-        }, this.settings.effects.slide.duration);
+            container.style.transition = '';
+            container.style.transform = '';
+            container.style.minHeight = '';
+        }, duration * 2 + 50);
     }
+
 
     applyZoomEffect(container, newSrc) {
         const img = document.createElement('img');
