@@ -16,6 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
     counter: true
   });
   const gallery2 = new GalleryDok({
-    gallerySelector: '[data-gallery-two]',
+    gallerySelector: '.gallery-page, [data-gallery-two], .video',
   });
 });

@@ -28,3 +28,53 @@ block content
                 img.thumbnail(src='https://images.unsplash.com/photo-1746184564778-87d9a18ca114?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwyMnx8fGVufDB8fHx8fA%3D%3D', data-group='group2', data-full='https://images.unsplash.com/photo-1746184564778-87d9a18ca114?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwyMnx8fGVufDB8fHx8fA%3D%3D')
             .gallery__item
                 img.thumbnail(src='https://images.unsplash.com/photo-1746023841861-d5fcf4b3d510?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwzMnx8fGVufDB8fHx8fA%3D%3D', data-group='group2', data-full='https://images.unsplash.com/photo-1746023841861-d5fcf4b3d510?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwzMnx8fGVufDB8fHx8fA%3D%3D')
+
+
+    section.gallery-page
+        .container.d-flex
+            .title Список через data-full
+            .gallery__wrapper
+                - for (let i = 1; i <= 6; i++)
+                    .gallery__item
+                        img.thumbnail(
+                            src=`https://sukhovdev.ru/api/image/random/?w=800&h=600&random=${i}`, 
+                            data-group='group3',
+                            data-full=`https://sukhovdev.ru/api/image/random/?w=800&h=600&random=${i}`
+                        )
+
+    section.gallery-page
+        .container.d-flex
+            .title Список через href, с использованием видео (последний элемент)
+            .gallery__wrapper
+                - for (let i = 1; i <= 5; i++)
+                    a.gallery__item.thumbnail(
+                        href=`https://sukhovdev.ru/api/image/random/?w=1280&h=720&random=${i}`,
+                        data-group='group4'
+                    )
+                        img(
+                            src=`https://sukhovdev.ru/api/image/random/?w=1280&h=720&random=${i}`, 
+                        )
+                a.gallery__item.thumbnail(
+                    href=`https://www.youtube.com/watch?v=dQw4w9WgXcQ`,
+                    data-group='group4'
+                )
+                    img(
+                        src=`https://sukhovdev.ru/api/image/random/?w=1280&h=720&random=6`, 
+                    )
+                        
+    section.gallery-page
+        .container.d-flex
+            .title Список без data-full и href
+            .gallery__wrapper
+                - for (let i = 1; i <= 6; i++)
+                    .gallery__item.thumbnail(
+                        data-group='group5'
+                    )
+                        img(
+                            src=`https://sukhovdev.ru/api/image/random/?w=1024&h=768&random=${i}`, 
+                        )
+
+    section.video
+        .container
+            .title Ссылка на 
+                a.thumbnail(href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" data-group="video") Видео

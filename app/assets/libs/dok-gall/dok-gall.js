@@ -4,7 +4,8 @@ class GalleryDok {
         this.defaults = {
             gallerySelector: '[data-gallery]',
             thumbnailSelector: '.thumbnail',
-            viewAllSelector: '[data-gallery] [data-gallery-all]',
+            viewAllSelector: '[data-gallery-all]',
+            imageURLAttribute: 'data-full', // Добавляем новую настройку
             animationDuration: 300,
             swipeThreshold: 50,
             keyboardNavigation: true,
@@ -27,6 +28,16 @@ class GalleryDok {
                     scale: 0.8,
                     duration: 350
                 }
+            },
+            // YouTube настройки
+            youtube: {
+                width: 853,
+                height: 480,
+                playerVars: {
+                    autoplay: 1,
+                    rel: 0,
+                    modestbranding: 1
+                }
             }
         };
 
@@ -38,39 +49,142 @@ class GalleryDok {
     }
 
     init() {
+        // Используем стандартный querySelectorAll, он уже поддерживает несколько селекторов через запятую
         this.galleries = document.querySelectorAll(this.settings.gallerySelector);
+        
         if (!this.galleries.length) return;
 
         this.setupEventListeners();
     }
+    
+    // Новый метод для получения URL изображения из элемента
+    getImageUrl(element) {
+        // Сначала проверяем настроенный атрибут
+        if (element.dataset[this.settings.imageURLAttribute]) {
+            return element.dataset[this.settings.imageURLAttribute];
+        }
+        
+        // Затем проверяем data-full
+        if (element.dataset.full) {
+            return element.dataset.full;
+        }
+        
+        // Другие возможные источники
+        if (element.href) {
+            return element.href;
+        }
+        
+        if (element.src) {
+            return element.src;
+        }
+        
+        // Для изображений проверяем атрибут src
+        const imgElement = element.querySelector('img');
+        if (imgElement && imgElement.src) {
+            return imgElement.src;
+        }
+        
+        console.error('Не удалось найти URL изображения для элемента:', element);
+        return null;
+    }
+    
+    // Проверка, является ли URL YouTube видео
+    isYouTubeUrl(url) {
+        return url && (
+            url.includes('youtube.com/watch') || 
+            url.includes('youtu.be/') ||
+            url.includes('youtube.com/embed/')
+        );
+    }
+    
+    // Получение ID видео из URL YouTube
+    getYouTubeVideoId(url) {
+        if (!url) return null;
+        
+        // Паттерны для разных форматов URL YouTube
+        const patterns = [
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^?&]+)/i,
+            /youtube\.com\/watch\?.*v=([^&]+)/i
+        ];
+        
+        for (const pattern of patterns) {
+            const match = url.match(pattern);
+            if (match && match[1]) {
+                return match[1];
+            }
+        }
+        
+        return null;
+    }
+    
+    // Создание iframe для YouTube видео
+    createYouTubeEmbed(videoId) {
+        const { width, height, playerVars } = this.settings.youtube;
+        
+        // Создаем параметры для URL
+        const params = new URLSearchParams();
+        for (const [key, value] of Object.entries(playerVars)) {
+            params.append(key, value);
+        }
+        
+        const embedUrl = `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+        
+        const iframe = document.createElement('iframe');
+        iframe.className = 'gallery-video';
+        iframe.width = width;
+        iframe.height = height;
+        iframe.src = embedUrl;
+        iframe.frameBorder = '0';
+        iframe.allowFullscreen = true;
+        
+        // Добавляем важные разрешения для автовоспроизведения со звуком
+        iframe.allow = "autoplay; encrypted-media";
+        
+        return iframe;
+    }
 
     setupEventListeners() {
-        this.galleries.forEach(gallery => {
+        this.galleries.forEach((gallery, index) => {
+            console.log(`Настройка галереи #${index}:`, gallery);
+            
             // клик на маленькие картинки
             const thumbnails = gallery.querySelectorAll(this.settings.thumbnailSelector);
+            console.log(`- Найдено ${thumbnails.length} миниатюр`);
+            
             thumbnails.forEach(thumb => {
+                // Добавляем атрибут для отладки, чтобы видеть, что мы добавили обработчик
+                thumb.setAttribute('data-gallery-initialized', 'true');
+                
                 thumb.addEventListener('click', (e) => {
+                    console.log('Клик по миниатюре:', thumb);
+                    e.preventDefault(); // Предотвращаем стандартное поведение ссылки
                     const group = thumb.dataset.group || 'default';
                     const groupImages = this.getGroupImages(gallery, group);
+                    console.log(`- Найдено ${groupImages.length} изображений в группе '${group}'`);
                     this.createModal(groupImages, thumb);
                 });
             });
 
             // кнопка если показать все
             const viewAllBtn = gallery.querySelector(this.settings.viewAllSelector);
+            console.log(`- Кнопка "показать все": ${viewAllBtn ? 'найдена' : 'не найдена'}`);
+            
             if (viewAllBtn) {
-                viewAllBtn.addEventListener('click', () => {
-                    const galleryContainer = viewAllBtn.closest(this.settings.gallerySelector);
+                viewAllBtn.addEventListener('click', (e) => {
+                    console.log('Клик по кнопке "показать все":', viewAllBtn);
+                    e.preventDefault(); // Предотвращаем стандартное поведение ссылки
+                    // Важно: теперь мы используем текущую галерею (gallery) вместо поиска через closest
                     let allImages;
-                    const firstThumb = galleryContainer.querySelector(this.settings.thumbnailSelector);
+                    const firstThumb = gallery.querySelector(this.settings.thumbnailSelector);
 
                     if (firstThumb && firstThumb.dataset.group) {
                         const group = firstThumb.dataset.group;
-                        allImages = this.getGroupImages(galleryContainer, group);
+                        allImages = this.getGroupImages(gallery, group);
                     } else {
-                        allImages = Array.from(galleryContainer.querySelectorAll(this.settings.thumbnailSelector));
+                        allImages = Array.from(gallery.querySelectorAll(this.settings.thumbnailSelector));
                     }
 
+                    console.log(`- В галерее найдено ${allImages.length} изображений`);
                     if (allImages.length) {
                         this.createModal(allImages, allImages[0]);
                     }
@@ -79,7 +193,8 @@ class GalleryDok {
         });
     }
 
-    // выбрать группу или все группы в 1
+
+
     getGroupImages(gallery, group) {
         if (group === 'all') {
             return Array.from(gallery.querySelectorAll(this.settings.thumbnailSelector));
@@ -87,12 +202,23 @@ class GalleryDok {
         return Array.from(gallery.querySelectorAll(`${this.settings.thumbnailSelector}[data-group="${group}"]`));
     }
 
-    //создание модалки и всех элементов внутри закрыть, счетчик, стрелки
     createModal(images, initialImage) {
-        if (!images.length) return;
+        if (!images.length) {
+            console.error('Нет изображений для отображения в галерее');
+            return;
+        }
 
         const currentIndex = images.indexOf(initialImage);
-        if (currentIndex === -1) return;
+        if (currentIndex === -1) {
+            console.error('Начальное изображение не найдено в списке', initialImage);
+            return;
+        }
+
+        console.log('Создание модального окна:', {
+            total: images.length,
+            currentIndex,
+            initialImage
+        });
 
         const overlay = document.createElement('div');
         overlay.className = 'gallery-overlay';
@@ -100,12 +226,32 @@ class GalleryDok {
         const content = document.createElement('div');
         content.className = 'gallery-content';
 
-        const img = document.createElement('img');
-        img.className = 'gallery-image';
-        img.src = initialImage.dataset.full;
+        // Получаем URL изображения/видео
+        const mediaUrl = this.getImageUrl(initialImage);
+        if (!mediaUrl) {
+            console.error('Невозможно получить URL медиа');
+            return;
+        }
+        
+        // Проверяем, является ли это YouTube видео
+        if (this.isYouTubeUrl(mediaUrl)) {
+            const videoId = this.getYouTubeVideoId(mediaUrl);
+            if (videoId) {
+                const iframe = this.createYouTubeEmbed(videoId);
+                content.appendChild(iframe);
+            } else {
+                console.error('Не удалось получить ID видео YouTube из:', mediaUrl);
+                return;
+            }
+        } else {
+            // Обычное изображение
+            const img = document.createElement('img');
+            img.className = 'gallery-image';
+            img.src = mediaUrl;
+            content.appendChild(img);
+        }
 
         overlay.appendChild(content);
-        content.appendChild(img);
         document.body.appendChild(overlay);
 
         if (images.length > 1) {
@@ -125,7 +271,7 @@ class GalleryDok {
             content.classList.add('active');
         }, 10);
 
-        this.setupModalEvents(overlay, content, img, images, currentIndex);
+        this.setupModalEvents(overlay, content, content.firstChild, images, currentIndex);
     }
 
     addNavigation(overlay, content, totalImages) {
@@ -154,14 +300,14 @@ class GalleryDok {
         overlay.appendChild(counter);
     }
 
-    setupModalEvents(overlay, content, img, images, initialIndex) {
+    setupModalEvents(overlay, content, mediaElement, images, initialIndex) {
         let currentIndex = initialIndex;
         const totalImages = images.length;
 
         const next = () => {
             if (currentIndex < totalImages - 1) {
                 currentIndex++;
-                this.changeImage(img, images[currentIndex], 'next');
+                this.changeMedia(content, mediaElement, images[currentIndex], 'next');
                 this.updateCounter(overlay, currentIndex + 1, totalImages);
             }
         };
@@ -169,7 +315,7 @@ class GalleryDok {
         const prev = () => {
             if (currentIndex > 0) {
                 currentIndex--;
-                this.changeImage(img, images[currentIndex], 'prev');
+                this.changeMedia(content, mediaElement, images[currentIndex], 'prev');
                 this.updateCounter(overlay, currentIndex + 1, totalImages);
             }
         };
@@ -271,116 +417,138 @@ class GalleryDok {
         }
     }
 
-    changeImage(img, newImage, direction) {
+    changeMedia(contentContainer, currentElement, newElement, direction) {
+        console.log('Смена медиа:', newElement);
+        
+        // Получаем URL медиа
+        const mediaUrl = this.getImageUrl(newElement);
+        if (!mediaUrl) {
+            console.error('Невозможно получить URL медиа для', newElement);
+            return;
+        }
+        
+        // Проверяем, YouTube это или изображение
+        const isYouTube = this.isYouTubeUrl(mediaUrl);
+        
+        // Очищаем контейнер
+        this.clearContent(contentContainer);
+        
+        if (isYouTube) {
+            // Для YouTube создаем iframe
+            const videoId = this.getYouTubeVideoId(mediaUrl);
+            if (videoId) {
+                const iframe = this.createYouTubeEmbed(videoId);
+                contentContainer.appendChild(iframe);
+            }
+        } else {
+            // Для изображений
+            this.loadImage(contentContainer, mediaUrl, direction);
+        }
+    }
+    
+    // Очистка содержимого контейнера
+    clearContent(container) {
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+    }
+    
+    // Загрузка изображения с эффектами
+    loadImage(container, imageSrc, direction) {
+        const img = document.createElement('img');
+        img.className = 'gallery-image';
+        
         const preload = new Image();
-        preload.src = newImage.dataset.full;
+        preload.src = imageSrc;
 
         preload.onload = () => {
             switch (this.settings.transitionEffect) {
                 case 'fade':
-                    this.applyFadeEffect(img, preload.src);
+                    this.applyFadeEffect(container, preload.src);
                     break;
                 case 'slide':
-                    this.applySlideEffect(img, preload.src, direction);
+                    this.applySlideEffect(container, preload.src, direction);
                     break;
                 case 'zoom':
-                    this.applyZoomEffect(img, preload.src);
+                    this.applyZoomEffect(container, preload.src);
                     break;
                 default:
                     img.src = preload.src;
+                    container.appendChild(img);
             }
+        };
+        
+        preload.onerror = () => {
+            console.error('Ошибка загрузки изображения:', imageSrc);
+            img.src = imageSrc;
+            container.appendChild(img);
         };
     }
 
-    applyFadeEffect(img, newSrc) {
-        const container = img.parentNode;
-        container.style.position = 'relative';
-
-        const tempImg = img.cloneNode();
-        tempImg.src = newSrc;
-        tempImg.style.position = 'absolute';
-        tempImg.style.top = '0';
-        tempImg.style.left = '0';
-        tempImg.style.opacity = '0';
-        tempImg.style.transition = `opacity ${this.settings.effects.fade.duration}ms ease-out`;
-
-        container.appendChild(tempImg);
+    applyFadeEffect(container, newSrc) {
+        const img = document.createElement('img');
+        img.className = 'gallery-image';
+        img.src = newSrc;
+        img.style.opacity = '0';
+        img.style.transition = `opacity ${this.settings.effects.fade.duration}ms ease-out`;
+        
+        container.appendChild(img);
 
         setTimeout(() => {
-            tempImg.style.opacity = '1';
+            img.style.opacity = '1';
         }, 10);
-
-        setTimeout(() => {
-            img.src = newSrc;
-            tempImg.remove();
-        }, this.settings.effects.fade.duration);
     }
 
-    applySlideEffect(img, newSrc, direction) {
-        const container = img.parentNode;
+    applySlideEffect(container, newSrc, direction) {
         container.style.position = 'relative';
         container.style.overflow = 'hidden';
 
-        const fromPos = direction === 'next' ? '100%' : '-100%';
-        const toPos = direction === 'next' ? '-100%' : '100%';
+        const img = document.createElement('img');
+        img.className = 'gallery-image';
+        img.src = newSrc;
+        img.style.position = 'absolute';
+        img.style.top = '0';
+        img.style.left = direction === 'next' ? '100%' : '-100%';
+        img.style.transition = `transform ${this.settings.effects.slide.duration}ms ease-out`;
 
-        const newImg = img.cloneNode();
-        newImg.src = newSrc;
-        newImg.style.position = 'absolute';
-        newImg.style.top = '0';
-        newImg.style.left = fromPos;
-        newImg.style.transition = `transform ${this.settings.effects.slide.duration}ms ease-out`;
-
-        container.appendChild(newImg);
+        container.appendChild(img);
 
         setTimeout(() => {
-            newImg.style.transform = `translateX(0)`;
-
-            img.style.transition = `transform ${this.settings.effects.slide.duration}ms ease-out`;
-            img.style.transform = `translateX(${toPos})`;
+            img.style.transform = 'translateX(0)';
         }, 10);
 
         setTimeout(() => {
-            img.src = newSrc;
+            img.style.position = '';
+            img.style.top = '';
+            img.style.left = '';
             img.style.transition = '';
             img.style.transform = '';
-            newImg.remove();
             container.style.overflow = '';
         }, this.settings.effects.slide.duration);
     }
 
-    applyZoomEffect(img, newSrc) {
-        const container = img.parentNode;
-        container.style.position = 'relative';
+    applyZoomEffect(container, newSrc) {
+        const img = document.createElement('img');
+        img.className = 'gallery-image';
+        img.src = newSrc;
+        img.style.transform = 'scale(0.8)';
+        img.style.opacity = '0';
+        img.style.transition = `
+            transform ${this.settings.effects.zoom.duration}ms ease-out,
+            opacity ${this.settings.effects.zoom.duration}ms ease-out
+        `;
 
-        const tempImg = img.cloneNode();
-        tempImg.src = newSrc;
-        tempImg.style.position = 'absolute';
-        tempImg.style.top = '0';
-        tempImg.style.left = '0';
-        tempImg.style.transform = 'scale(0.8)';
-        tempImg.style.opacity = '0';
-        tempImg.style.transition = `
-      transform ${this.settings.effects.zoom.duration}ms ease-out,
-      opacity ${this.settings.effects.zoom.duration}ms ease-out
-    `;
-
-        container.appendChild(tempImg);
+        container.appendChild(img);
 
         setTimeout(() => {
-            tempImg.style.transform = 'scale(1)';
-            tempImg.style.opacity = '1';
+            img.style.transform = 'scale(1)';
+            img.style.opacity = '1';
         }, 10);
-
-        setTimeout(() => {
-            img.src = newSrc;
-            tempImg.remove();
-        }, this.settings.effects.zoom.duration);
     }
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = GalleryLightbox;
+    module.exports = GalleryDok;
 } else if (typeof window !== 'undefined') {
-    window.GalleryLightbox = GalleryLightbox;
+    window.GalleryDok = GalleryDok;
 }
