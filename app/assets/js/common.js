@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
     transitionEffect: 'fade',
     effects: {
       fade: {
-        direction: 'vertical',
         duration: 500
       }
     },

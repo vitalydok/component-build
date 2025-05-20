@@ -496,7 +496,7 @@ class GalleryDok {
     }
 
     applyFadeEffect(container, newSrc) {
-        const duration = this.settings.effects.slide.duration;
+        const duration = this.settings.effects.fade.duration;
 
         container.style.transition = `opacity ${duration}ms ease-out`;
         container.style.opacity = '0';
