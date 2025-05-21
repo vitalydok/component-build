@@ -285,6 +285,10 @@ class GalleryDok {
         nextBtn.innerHTML = '&gt;';
         nextBtn.className = 'gallery-nav gallery-nav--right';
         overlay.appendChild(nextBtn);
+
+        const swipeCatcher = document.createElement('div');
+        swipeCatcher.className = 'gallery-swipe-catcher';
+        overlay.appendChild(swipeCatcher);
     }
 
     addCloseButton(overlay) {
@@ -386,6 +390,7 @@ class GalleryDok {
 
         const handleTouchStart = (e) => {
             touchStartX = e.touches[0].clientX;
+            touchEndX = touchStartX;
         };
 
         const handleTouchMove = (e) => {

@@ -62,6 +62,9 @@ gulp.task("update-blocks", function () {
 gulp.task("browser-sync", function () {
     browserSync({
         server: pathBuild,
+        host: '0.0.0.0',
+        port: 3000,
+        open: false
     });
 });
 
