@@ -572,7 +572,7 @@ class GalleryDok {
         container.style.willChange = 'transform';
 
         // Смещение контейнера в нужную сторону
-        const offset = direction === 'next' ? '100vw' : '-100vw';
+        const offset = direction === 'next' ? '-100vw' : '100vw';
         container.style.transition = `transform ${duration}ms ease-out`;
         container.style.transform = `translateX(${offset})`;
 
@@ -594,14 +594,16 @@ class GalleryDok {
 
             // Устанавливаем контейнер в противоположную сторону мгновенно
             container.style.transition = 'none';
-            container.style.transform = `translateX(${direction === 'next' ? '-100vw' : '100vw'})`;
+            container.style.transform = `translateX(${direction === 'next' ? '100vw' : '-100vw'})`;
 
             // Позволяем браузеру отрисовать
-            requestAnimationFrame(() => {
-                // Возвращаем контейнер в центр с анимацией
-                container.style.transition = `transform ${duration}ms ease-out`;
-                container.style.transform = 'translateX(0)';
-            });
+            setTimeout(() => {
+                requestAnimationFrame(() => {
+                    // Возвращаем контейнер в центр с анимацией
+                    container.style.transition = `transform ${duration}ms ease-out`;
+                    container.style.transform = 'translateX(0)';
+                });
+            }, 10);
         }, duration);
 
         // Очищаем временные стили после завершения второй анимации
