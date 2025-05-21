@@ -584,11 +584,6 @@ class GalleryDok {
             const newImg = document.createElement('img');
             newImg.className = 'gallery-image';
             newImg.src = newSrc;
-            // newImg.style.width = '100%';
-            // newImg.style.height = '100%';
-            newImg.style.display = 'block';
-            newImg.style.margin = '0 auto';
-            // newImg.style.objectFit = 'contain';
 
             container.appendChild(newImg);
 
@@ -616,22 +611,48 @@ class GalleryDok {
 
 
     applyZoomEffect(container, newSrc) {
-        const img = document.createElement('img');
-        img.className = 'gallery-image';
-        img.src = newSrc;
-        img.style.transform = 'scale(0.8)';
-        img.style.opacity = '0';
-        img.style.transition = `
+        const duration = this.settings.effects.zoom.duration;
+
+        container.style.position = 'relative';
+        container.style.overflow = 'hidden';
+        container.style.width = '100%';
+        container.style.transition = `
             transform ${this.settings.effects.zoom.duration}ms ease-out,
             opacity ${this.settings.effects.zoom.duration}ms ease-out
         `;
+        container.style.willChange = 'transform';
+        container.style.transform = `scale(0.5)`;
+        container.style.opacity = '0';
 
-        container.appendChild(img);
 
+        // Ждём завершения анимации ухода
         setTimeout(() => {
-            img.style.transform = 'scale(1)';
-            img.style.opacity = '1';
-        }, 10);
+            // Меняем изображение, очищаем контейнер
+            this.clearContent(container);
+
+            const newImg = document.createElement('img');
+            newImg.className = 'gallery-image';
+            newImg.src = newSrc;
+
+            container.appendChild(newImg);
+
+
+            // Позволяем браузеру отрисовать
+            setTimeout(() => {
+                requestAnimationFrame(() => {
+                    // Возвращаем контейнер в центр с анимацией
+                    container.style.transform = 'scale(1)';
+                    container.style.opacity = '1';
+                });
+            }, 10);
+        }, duration);
+
+        // Очищаем временные стили после завершения второй анимации
+        setTimeout(() => {
+            container.style.transition = '';
+            container.style.transform = '';
+            container.style.minHeight = '';
+        }, duration * 2 + 50);
     }
 }
 
