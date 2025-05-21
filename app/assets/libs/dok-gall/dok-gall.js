@@ -93,7 +93,9 @@ class GalleryDok {
                 resolve();
                 return;
             }
-            
+            if (document.querySelector(`script[src*="/plugins/${pluginName}/"]`)) {
+                return;
+            }
             // Путь к файлу плагина
             const pluginPath = `/assets/js/plugins/${pluginName}/index.js`;
             
