@@ -27,7 +27,10 @@ class GalleryDok {
                 zoom: {
                     scale: 0.8,
                     duration: 350
-                }
+                },
+                // flip: {
+                //     duration: 600
+                // },
             },
             // YouTube настройки
             youtube: {
@@ -499,6 +502,9 @@ class GalleryDok {
                 case 'zoom':
                     this.applyZoomEffect(container, preload.src);
                     break;
+                // case 'flip':
+                //     this.apply3DFlipEffect(container, preload.src);
+                //     break;
                 default:
                     img.src = preload.src;
                     container.appendChild(img);
@@ -534,33 +540,6 @@ class GalleryDok {
         }, duration);
     }
 
-    // applySlideEffect(container, newSrc, direction) {
-    //     container.style.position = 'relative';
-    //     container.style.overflow = 'hidden';
-
-    //     const img = document.createElement('img');
-    //     img.className = 'gallery-image';
-    //     img.src = newSrc;
-    //     img.style.position = 'absolute';
-    //     img.style.top = '0';
-    //     img.style.left = direction === 'next' ? '100%' : '-100%';
-    //     img.style.transition = `transform ${this.settings.effects.slide.duration}ms ease-out`;
-
-    //     container.appendChild(img);
-
-    //     setTimeout(() => {
-    //         img.style.transform = 'translateX(0)';
-    //     }, 10);
-
-    //     setTimeout(() => {
-    //         img.style.position = '';
-    //         img.style.top = '';
-    //         img.style.left = '';
-    //         img.style.transition = '';
-    //         img.style.transform = '';
-    //         container.style.overflow = '';
-    //     }, this.settings.effects.slide.duration);
-    // }
     applySlideEffect(container, newSrc, direction) {
         const duration = this.settings.effects.slide.duration;
 
@@ -617,8 +596,8 @@ class GalleryDok {
         container.style.overflow = 'hidden';
         container.style.width = '100%';
         container.style.transition = `
-            transform ${this.settings.effects.zoom.duration}ms ease-out,
-            opacity ${this.settings.effects.zoom.duration}ms ease-out
+            transform ${duration}ms ease-out,
+            opacity ${duration}ms ease-out
         `;
         container.style.willChange = 'transform';
         container.style.transform = `scale(0.5)`;
@@ -654,6 +633,49 @@ class GalleryDok {
             container.style.minHeight = '';
         }, duration * 2 + 50);
     }
+
+
+    // apply3DFlipEffect(container, newSrc) {
+    //     var duration = this.settings.effects.flip.duration;
+        
+    //     // Создаем перспективу для 3D-эффекта
+    //     container.style.position = 'relative';
+    //     container.style.perspective = '1000px';
+    //     container.style.transformStyle = 'preserve-3d';
+    //     container.style.transition = `transform ${duration}ms ease-out`;
+        
+    //     // Начинаем анимацию переворота (первая половина)
+    //     container.style.transform = 'rotateY(90deg)';
+        
+    //     // В середине анимации меняем изображение
+    //     setTimeout(() => {
+    //         // Очищаем содержимое
+    //         this.clearContent(container);
+            
+    //         // Добавляем новое изображение
+    //         var newImg = document.createElement('img');
+    //         newImg.className = 'gallery-image';
+    //         newImg.src = newSrc;
+
+    //         container.appendChild(newImg);
+            
+
+    //         // Устанавливаем контейнер в противоположную сторону мгновенно
+    //         container.style.transition = 'none';
+    //         container.style.transform = 'rotateY(270deg)';
+
+    //         // Позволяем браузеру отрисовать
+    //         setTimeout(() => {
+    //             requestAnimationFrame(() => {
+    //                 // Возвращаем контейнер в центр с анимацией
+    //                 container.style.transition = `transform ${duration}ms ease-out`;
+    //                 // Возвращаем контейнер в центр с анимацией
+    //                 container.style.perspective = '';
+    //                 container.style.transform = '';
+    //             });
+    //         }, 10);
+    //     }, duration / 2);
+    // }
 }
 
 if (typeof module !== 'undefined' && module.exports) {
