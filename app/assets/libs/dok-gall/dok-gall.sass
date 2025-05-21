@@ -9,9 +9,6 @@
     opacity: 0
     overflow: hidden
     transition: width 0.3s ease-out, height 0.3s ease-out
-    iframe
-      @media (max-width: 992px)
-        width: 100%
   &-overlay
     position: fixed
     top: 0
@@ -33,6 +30,9 @@
         justify-items: center
         transform: scale(1)
         opacity: 1
+        width: 100%
+        height: 100%
+        align-content: center
   &-nav
     display: none
     @media (min-width: 592px)
@@ -85,7 +85,7 @@
     &:hover
       background: rgba(0,0,0,0.8)
 
-  &-image
+  &-image, &-video
     max-width: 100%
     max-height: 80vh
     display: block
@@ -95,6 +95,9 @@
     object-fit: contain
     transform-origin: center center
     transition: all 0.3s ease-out
+    width: 100%
+    height: 100%
+    object-fit: contain
     &-container
       overflow: hidden
       width: 100%
@@ -103,6 +106,9 @@
       justify-content: center
       align-items: center
       cursor: grab
+  &-video
+    height: auto
+    aspect-ratio: 16 / 9
   &-fade
     &-out
       opacity: 0 !important
@@ -111,3 +117,14 @@
       animation: galleryFadeIn 0.3s ease-out forwards
   &-view-all
     cursor: pointer
+  &-swipe-catcher
+    width: 100%
+    height: 100%
+    position: absolute
+    top: 0
+    left: 0
+    z-index: 999
+    pointer-events: auto
+    touch-action: pan-y
+  &-swipe-catcher.active
+      pointer-events: auto

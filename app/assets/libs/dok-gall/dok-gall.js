@@ -131,8 +131,8 @@ class GalleryDok {
         
         const iframe = document.createElement('iframe');
         iframe.className = 'gallery-video';
-        iframe.width = width;
-        iframe.height = height;
+        // iframe.width = width;
+        // iframe.height = height;
         iframe.src = embedUrl;
         iframe.frameBorder = '0';
         iframe.allowFullscreen = true;
@@ -285,10 +285,6 @@ class GalleryDok {
         nextBtn.innerHTML = '&gt;';
         nextBtn.className = 'gallery-nav gallery-nav--right';
         overlay.appendChild(nextBtn);
-
-        const swipeCatcher = document.createElement('div');
-        swipeCatcher.className = 'gallery-swipe-catcher';
-        overlay.appendChild(swipeCatcher);
     }
 
     addCloseButton(overlay) {
@@ -399,7 +395,6 @@ class GalleryDok {
 
         const handleTouchEnd = () => {
             const swipeDistance = touchEndX - touchStartX;
-
             if (swipeDistance > this.settings.swipeThreshold) {
                 prev();
             } else if (swipeDistance < -this.settings.swipeThreshold) {
@@ -589,11 +584,11 @@ class GalleryDok {
             const newImg = document.createElement('img');
             newImg.className = 'gallery-image';
             newImg.src = newSrc;
-            newImg.style.width = '100%';
-            newImg.style.height = 'auto';
+            // newImg.style.width = '100%';
+            // newImg.style.height = '100%';
             newImg.style.display = 'block';
-            newImg.style.maxWidth = '90%';
             newImg.style.margin = '0 auto';
+            // newImg.style.objectFit = 'contain';
 
             container.appendChild(newImg);
 
