@@ -41,14 +41,108 @@ class GalleryDok {
                     rel: 0,
                     modestbranding: 1
                 }
-            }
+            },
+            // Настройки для плагинов
+            plugins: {}
         };
 
         // в собираю все настройки в кучу
         this.settings = {...this.defaults, ...options};
+        
+        // Загружаем необходимые плагины
+        this.loadPlugins().then(() => {
+            this.init();
+        });
+    }
 
-        // Инициализация
-        this.init();
+    /**
+     * Загружает все плагины, указанные в опциях
+     * @returns {Promise} - Promise, который резолвится, когда все плагины загружены
+     */
+    loadPlugins() {
+        // Получаем список плагинов из настроек
+        const pluginsToLoad = Object.keys(this.settings.plugins);
+        
+        if (pluginsToLoad.length === 0) {
+            return Promise.resolve(); // Нет плагинов для загрузки
+        }
+        
+        console.log('Загрузка плагинов:', pluginsToLoad);
+        
+        // Создаем массив промисов для загрузки каждого плагина
+        const pluginPromises = pluginsToLoad.map(pluginName => {
+            return this.loadPlugin(pluginName, this.settings.plugins[pluginName]);
+        });
+        
+        // Возвращаем Promise, который будет разрешен, когда все плагины загрузятся
+        return Promise.all(pluginPromises);
+    }
+
+    /**
+     * Загружает один плагин
+     * @param {string} pluginName - Имя плагина
+     * @param {object} pluginOptions - Настройки плагина
+     * @returns {Promise} - Promise, который резолвится, когда плагин загружен
+     */
+    loadPlugin(pluginName, pluginOptions) {
+        return new Promise((resolve, reject) => {
+            // Проверяем, не загружен ли уже плагин
+            const pluginClassName = `Gallery${this.capitalizeFirstLetter(pluginName)}Plugin`;
+            if (window[pluginClassName]) {
+                this.initializePlugin(pluginName, pluginClassName, pluginOptions);
+                resolve();
+                return;
+            }
+            
+            // Путь к файлу плагина
+            const pluginPath = `/assets/js/plugins/${pluginName}/index.js`;
+            
+            // Создаем элемент script
+            const script = document.createElement('script');
+            script.src = pluginPath;
+            script.async = true;
+            
+            // Обработчик успешной загрузки
+            script.onload = () => {
+                console.log(`Плагин ${pluginName} успешно загружен`);
+                this.initializePlugin(pluginName, pluginClassName, pluginOptions);
+                resolve();
+            };
+            
+            // Обработчик ошибки
+            script.onerror = () => {
+                console.error(`Не удалось загрузить плагин ${pluginName} по пути ${pluginPath}`);
+                reject(new Error(`Не удалось загрузить плагин ${pluginName}`));
+            };
+            
+            // Добавляем script в head
+            document.head.appendChild(script);
+        });
+    }
+
+    /**
+     * Инициализирует загруженный плагин
+     * @param {string} pluginName - Имя плагина
+     * @param {string} pluginClassName - Имя класса плагина
+     * @param {object} pluginOptions - Настройки плагина
+     */
+    initializePlugin(pluginName, pluginClassName, pluginOptions) {
+        if (window[pluginClassName]) {
+            // Создаем экземпляр плагина, передавая ему текущий экземпляр галереи и настройки
+            this[`${pluginName}Plugin`] = new window[pluginClassName](this, pluginOptions);
+            console.log(`Плагин ${pluginName} инициализирован с настройками:`, pluginOptions);
+        } else {
+            console.error(`Класс плагина ${pluginClassName} не найден после загрузки`);
+        }
+    }
+
+    /**
+     * Делает первую букву строки заглавной
+     * @param {string} string - Исходная строка
+     * @returns {string} - Строка с заглавной первой буквой
+     */
+    capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
     }
 
     init() {
