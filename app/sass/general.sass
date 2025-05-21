@@ -521,3 +521,56 @@ article
     .gallery__item
       width: calc((100% - 48px) / 4)
 
+.menu-indicator 
+  position: absolute
+  bottom: 55px
+  left: 50%
+  margin-left: -150px
+  z-index: 4
+  width: 300px
+  text-align: center
+  transition: opacity .3s ease
+  .indicator-wrapper
+    transform: translate3d(0, 0, 0)
+    width: 150px
+    margin: 0 auto
+    .indicator-cursor
+      width: 25px
+      position: absolute
+      top: 1.75em
+      z-index: 5
+      animation: cursor-animation 1.2s cubic-bezier(0.230, 1.000, 0.720, 1.000) infinite
+      @keyframes cursor-animation
+          0%
+            left: 100px
+            transform: rotate(30deg)
+          100%
+            left: 40px
+            transform: rotate(0deg)
+.box-wrapper
+  width: 150px
+  overflow: hidden
+  height: 50px
+  position: relative
+  margin-left: auto
+  margin-right: auto
+  $widthOfBox: 3em
+  .box-outer
+      position: relative
+      top: calc(50% - 1em)
+      animation: box-animation 1.2s cubic-bezier(0.230, 1.000, 0.720, 1.000) infinite
+      @keyframes box-animation
+          0%
+            left: 0px
+
+          100%
+            left: -5em
+  .box
+      position: absolute
+      width: $widthOfBox
+      height: 2em
+      border-radius: 3px
+      border: 1px solid #555
+      @for $i from 0 through 3
+          &:nth-of-type(#{$i})
+              left: 4.25em * $i
