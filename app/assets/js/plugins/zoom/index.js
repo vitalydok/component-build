@@ -31,6 +31,21 @@ class ZoomPlugin {
         
         this.addStyles();
         this.bindGalleryEvents();
+
+        // Создание прототипа changeMedia из базы, для отслеживания смены слайда
+        if (this.gallery && typeof this.gallery.changeMedia === 'function') {
+            const originalChangeMedia = this.gallery.changeMedia.bind(this.gallery);
+
+            this.gallery.changeMedia = (...args) => {
+                const result = originalChangeMedia(...args);
+
+                // Вызов Zoom-поведения после смены медиа
+                this.onImageChanged();
+
+                return result;
+            };
+        }
+
         
         return this;
     }
@@ -137,7 +152,7 @@ class ZoomPlugin {
         this.zoomControls.innerHTML = `
             <button class="pictura-zoom-in" title="Увеличить">+</button>
             <button class="pictura-zoom-out" title="Уменьшить">−</button>
-            <button class="pictura-zoom-reset" title="Сбросить">⌂</button>
+            <button class="pictura-zoom-reset" title="Сбросить">↻</button>
         `;
         
         // Добавляем контролы в overlay галереи
@@ -539,7 +554,6 @@ class ZoomPlugin {
         } else {
             // Отключаем режим зума - устанавливаем размер точно под текущее изображение
             const imageSize = this.getCurrentImageDisplaySize();
-            console.log(imageSize);
             container.style.width = `${imageSize.width}px`;
             container.style.height = `${imageSize.height}px`;
         }
@@ -559,7 +573,7 @@ class ZoomPlugin {
         const image = this.getCurrentImage();
         const container = document.querySelector('.gallery-content');
         
-        if (!image) return { width: 400, height: 300 }; // fallback
+        if (!image) return; // fallback
         
         // Если изображение еще не загрузилось, ждем загрузки
         if (!image.naturalWidth || !image.naturalHeight) {
@@ -612,7 +626,7 @@ class ZoomPlugin {
             displayHeight = displayWidth / imageAspect;
         } else {
             // Изображение выше - ограничиваем по высоте
-            displayHeight = Math.min(maxHeight, clientHeight);
+            displayHeight = Math.min(maxHeight, naturalHeight);
             displayWidth = displayHeight * imageAspect;
         }
         
