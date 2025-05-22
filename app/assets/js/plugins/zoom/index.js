@@ -458,6 +458,7 @@ class ZoomPlugin {
     zoomIn() {
         if (this.currentScale < this.settings.maxScale) {
             this.currentScale += this.settings.step;
+            this.setContainerZoomMode(this.isZoomActive());
             this.applyTransform();
         }
         this.updateControls();
@@ -471,6 +472,7 @@ class ZoomPlugin {
             this.currentScale -= this.settings.step;
             // При уменьшении корректируем позицию
             this.adjustPositionAfterZoom();
+            this.setContainerZoomMode(this.isZoomActive());
             this.applyTransform();
         }
         this.updateControls();
@@ -482,6 +484,7 @@ class ZoomPlugin {
     resetZoom() {
         this.currentScale = 1;
         this.resetPosition();
+        this.setContainerZoomMode(false);
         this.updateControls();
     }
     
@@ -519,6 +522,31 @@ class ZoomPlugin {
     }
 
     /**
+     * Устанавливает режим контейнера для зума
+     */
+    setContainerZoomMode(isZoomed) {
+        const container = document.querySelector('.gallery-content');
+        if (!container) return;
+        
+        if (isZoomed) {
+            // Активируем режим зума - контейнер на весь экран
+            container.style.width = '100%';
+            container.style.height = '100%';
+        } else {
+            // Отключаем режим зума - возвращаем auto размеры
+            container.style.width = 'auto';
+            container.style.height = 'auto';
+        }
+    }
+
+    /**
+     * Проверяет, активен ли режим зума
+     */
+    isZoomActive() {
+        return this.currentScale > 1;
+    }
+    
+    /**
      * Добавим метод для зума с центрированием по курсору (разработка)
      */
     zoomToPoint(scale, clientX, clientY) {
@@ -538,6 +566,9 @@ class ZoomPlugin {
         this.translateY = cursorY - (cursorY - this.translateY) * scaleRatio;
         
         this.currentScale = Math.max(this.settings.minScale, Math.min(this.settings.maxScale, scale));
+        
+        // Устанавливаем режим контейнера
+        this.setContainerZoomMode(this.isZoomActive());
         
         // Корректируем позицию после зума
         this.adjustPositionAfterZoom();
