@@ -337,7 +337,6 @@ class ZoomPlugin {
             displayWidth = containerRect.height * imageAspect;
             offsetX = (containerRect.width - displayWidth) / 2;
         }
-        
         return {
             width: displayWidth,
             height: displayHeight,
@@ -387,21 +386,21 @@ class ZoomPlugin {
         this.translateX = Math.max(-maxTranslateX, Math.min(maxTranslateX, newTranslateX));
         this.translateY = Math.max(-maxTranslateY, Math.min(maxTranslateY, newTranslateY));
         
-        // console.log('Position update:', {
-        //     scale: this.currentScale,
-        //     translateX: this.translateX,
-        //     translateY: this.translateY,
-        //     maxTranslateX,
-        //     maxTranslateY,
-        //     scaledWidth,
-        //     scaledHeight,
-        //     displayedWidth: displayedSize.width,
-        //     displayedHeight: displayedSize.height,
-        //     containerWidth: containerRect.width,
-        //     containerHeight: containerRect.height,
-        //     imageOffsetX: displayedSize.offsetX,
-        //     imageOffsetY: displayedSize.offsetY
-        // });
+        console.log('Position update:', {
+            scale: this.currentScale,
+            translateX: this.translateX,
+            translateY: this.translateY,
+            maxTranslateX,
+            maxTranslateY,
+            scaledWidth,
+            scaledHeight,
+            displayedWidth: displayedSize.width,
+            displayedHeight: displayedSize.height,
+            containerWidth: containerRect.width,
+            containerHeight: containerRect.height,
+            imageOffsetX: displayedSize.offsetX,
+            imageOffsetY: displayedSize.offsetY
+        });
         
         // Применяем трансформацию
         this.applyTransform();
@@ -521,22 +520,106 @@ class ZoomPlugin {
         this.translateY = Math.max(-maxTranslateY, Math.min(maxTranslateY, this.translateY));
     }
 
+
+
     /**
-     * Устанавливает режим контейнера для зума
+     * Устанавливает режим контейнера для зума с плавной анимацией
      */
     setContainerZoomMode(isZoomed) {
         const container = document.querySelector('.gallery-content');
         if (!container) return;
         
+        // Добавляем CSS transition для плавной анимации
+        container.style.transition = `width ${this.settings.animationDuration}ms ease, height ${this.settings.animationDuration}ms ease`;
+        
         if (isZoomed) {
-            // Активируем режим зума - контейнер на весь экран
+            // Активируем режим зума - контейнер расширяется для удобного перетаскивания
             container.style.width = '100%';
             container.style.height = '100%';
         } else {
-            // Отключаем режим зума - возвращаем auto размеры
-            container.style.width = 'auto';
-            container.style.height = 'auto';
+            // Отключаем режим зума - устанавливаем размер точно под текущее изображение
+            const imageSize = this.getCurrentImageDisplaySize();
+            console.log(imageSize);
+            container.style.width = `${imageSize.width}px`;
+            container.style.height = `${imageSize.height}px`;
         }
+        
+        // Убираем transition через некоторое время чтобы не мешать при перетаскивании
+        setTimeout(() => {
+            if (container.style.transition) {
+                container.style.transition = '';
+            }
+        }, this.settings.animationDuration + 50);
+    }
+
+    /**
+     * Получает отображаемый размер текущего изображения в реальном времени
+     */
+    getCurrentImageDisplaySize() {
+        const image = this.getCurrentImage();
+        const container = document.querySelector('.gallery-content');
+        
+        if (!image) return { width: 400, height: 300 }; // fallback
+        
+        // Если изображение еще не загрузилось, ждем загрузки
+        if (!image.naturalWidth || !image.naturalHeight) {
+            return new Promise((resolve) => {
+                const checkLoad = () => {
+                    if (image.naturalWidth && image.naturalHeight) {
+                        resolve(this.calculateImageSize(image));
+                    } else {
+                        setTimeout(checkLoad, 50);
+                    }
+                };
+                checkLoad();
+            });
+        }
+        
+        return this.calculateImageSize(image);
+    }
+
+    /**
+     * Вычисляет размер изображения с учетом доступного пространства
+     */
+    calculateImageSize(image) {
+        const clientWidth = image.clientWidth;
+        const clientHeight = image.clientHeight;
+        
+        if (!clientWidth || !clientHeight) {
+            return { width: 400, height: 300 }; // fallback
+        }
+        
+        // Получаем максимально доступное пространство
+        const overlay = document.querySelector('.gallery-overlay.active');
+        if (!overlay) {
+            return { width: clientWidth, height: clientHeight };
+        }
+        
+        const overlayRect = overlay.getBoundingClientRect();
+        const maxWidth = overlayRect.width - 80; // отступы для контролов и границ
+        const maxHeight = overlayRect.height - 80;
+        
+        // Вычисляем соотношения сторон
+        const imageAspect = clientWidth / clientHeight;
+        const maxAspect = maxWidth / maxHeight;
+        
+        let displayWidth, displayHeight;
+        
+        // Определяем как изображение вписывается (object-fit: contain)
+        if (imageAspect > maxAspect) {
+            // Изображение шире - ограничиваем по ширине
+            displayWidth = Math.min(maxWidth, clientWidth);
+            displayHeight = displayWidth / imageAspect;
+        } else {
+            // Изображение выше - ограничиваем по высоте
+            displayHeight = Math.min(maxHeight, clientHeight);
+            displayWidth = displayHeight * imageAspect;
+        }
+        
+        return {
+            width: Math.round(displayWidth),
+            height: Math.round(displayHeight)
+        };
     }
 
     /**
@@ -547,7 +630,7 @@ class ZoomPlugin {
     }
     
     /**
-     * Добавим метод для зума с центрированием по курсору (разработка)
+     * Добавим метод для зума с центрированием по курсору (опционально)
      */
     zoomToPoint(scale, clientX, clientY) {
         const image = this.getCurrentImage();
@@ -576,6 +659,28 @@ class ZoomPlugin {
         this.updateControls();
     }
     
+    /**
+     * Обновляет размер контейнера для текущего изображения (асинхронно)
+     */
+    async updateContainerForCurrentImage() {
+        if (!this.isModalOpen || this.isZoomActive()) return;
+        
+        const imageSize = await this.getCurrentImageDisplaySize();
+        const container = document.querySelector('.gallery-content');
+        
+        if (container && imageSize) {
+            container.style.transition = `width ${this.settings.animationDuration}ms ease, height ${this.settings.animationDuration}ms ease`;
+            container.style.width = `${imageSize.width}px`;
+            container.style.height = `${imageSize.height}px`;
+            
+            setTimeout(() => {
+                if (container.style.transition) {
+                    container.style.transition = '';
+                }
+            }, this.settings.animationDuration + 50);
+        }
+    }
+
     /**
      * Применяет текущий масштаб к изображению
      */
