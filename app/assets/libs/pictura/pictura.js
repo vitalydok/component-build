@@ -87,7 +87,7 @@ class Pictura {
     loadPlugin(pluginName, pluginOptions) {
         return new Promise((resolve, reject) => {
             // Проверяем, не загружен ли уже плагин
-            const pluginClassName = `Gallery${this.capitalizeFirstLetter(pluginName)}Plugin`;
+            const pluginClassName = `Pictura${this.capitalizeFirstLetter(pluginName)}Plugin`;
             if (window[pluginClassName]) {
                 this.initializePlugin(pluginName, pluginClassName, pluginOptions);
                 resolve();
@@ -132,6 +132,12 @@ class Pictura {
         if (window[pluginClassName]) {
             // Создаем экземпляр плагина, передавая ему текущий экземпляр галереи и настройки
             this[`${pluginName}Plugin`] = new window[pluginClassName](this, pluginOptions);
+        
+            // Явно вызываем init(), если он существует
+            if (typeof this[`${pluginName}Plugin`].init === 'function') {
+                this[`${pluginName}Plugin`].init();
+            }
+
             console.log(`Плагин ${pluginName} инициализирован с настройками:`, pluginOptions);
         } else {
             console.error(`Класс плагина ${pluginClassName} не найден после загрузки`);

@@ -9,7 +9,4 @@ document.addEventListener('DOMContentLoaded', () => {
       },
     },
   });
-  if (gallery.zoomPlugin) {
-    gallery.zoomPlugin.init();
-  }
 });
