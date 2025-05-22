@@ -17,6 +17,13 @@ class ZoomPlugin {
         this.zoomControls = null;
         this.isModalOpen = false;
         this.stylesAdded = false;
+        
+        // Состояние перетаскивания
+        this.isDragging = false;
+        this.lastX = 0;
+        this.lastY = 0;
+        this.translateX = 0;
+        this.translateY = 0;
     }
     
     init() {
@@ -91,6 +98,7 @@ class ZoomPlugin {
         console.log('Модалка открыта, создаем контролы зума');
         this.isModalOpen = true;
         this.createZoomControls();
+        this.bindMouseEvents();
         this.resetZoom();
     }
     
@@ -101,6 +109,7 @@ class ZoomPlugin {
         console.log('Модалка закрыта, удаляем контролы зума');
         this.isModalOpen = false;
         this.removeZoomControls();
+        this.unbindMouseEvents();
         this.resetZoom();
     }
     
@@ -110,6 +119,7 @@ class ZoomPlugin {
     onImageChanged() {
         if (this.isModalOpen) {
             this.resetZoom();
+            this.resetPosition();
         }
     }
     
@@ -198,6 +208,12 @@ class ZoomPlugin {
             .gallery-image {
                 transition: transform 0.3s ease;
                 transform-origin: center center;
+                cursor: grab;
+            }
+            
+            .gallery-image.dragging {
+                cursor: grabbing;
+                transition: none;
             }
         `;
         document.head.appendChild(style);
@@ -205,8 +221,161 @@ class ZoomPlugin {
     }
     
     /**
-     * Привязывает события к кнопкам
+     * Привязывает события мыши для перетаскивания
      */
+    bindMouseEvents() {
+        const image = this.getCurrentImage();
+        if (!image) return;
+        
+        // Отключаем стандартное перетаскивание изображения
+        image.draggable = false;
+        
+        image.addEventListener('mousedown', this.onMouseDown.bind(this));
+        document.addEventListener('mousemove', this.onMouseMove.bind(this));
+        document.addEventListener('mouseup', this.onMouseUp.bind(this));
+        
+        // Запрещаем выделение текста при перетаскивании
+        image.addEventListener('selectstart', (e) => e.preventDefault());
+    }
+    
+    /**
+     * Отвязывает события мыши
+     */
+    unbindMouseEvents() {
+        const image = this.getCurrentImage();
+        if (image) {
+            image.removeEventListener('mousedown', this.onMouseDown.bind(this));
+            image.classList.remove('dragging');
+        }
+        
+        document.removeEventListener('mousemove', this.onMouseMove.bind(this));
+        document.removeEventListener('mouseup', this.onMouseUp.bind(this));
+    }
+    
+    /**
+     * Обработчик нажатия мыши
+     */
+    onMouseDown(e) {
+        // Перетаскивание только если изображение увеличено
+        if (this.currentScale <= 1) return;
+        
+        e.preventDefault();
+        this.isDragging = true;
+        this.lastX = e.clientX;
+        this.lastY = e.clientY;
+        
+        const image = this.getCurrentImage();
+        if (image) {
+            image.classList.add('dragging');
+        }
+    }
+    
+    /**
+     * Обработчик движения мыши
+     */
+    onMouseMove(e) {
+        if (!this.isDragging || this.currentScale <= 1) return;
+        
+        e.preventDefault();
+        
+        const deltaX = e.clientX - this.lastX;
+        const deltaY = e.clientY - this.lastY;
+        
+        // Обновляем позицию с учетом ограничений
+        this.updatePosition(deltaX, deltaY);
+        
+        this.lastX = e.clientX;
+        this.lastY = e.clientY;
+    }
+    
+    /**
+     * Обработчик отпускания мыши
+     */
+    onMouseUp(e) {
+        if (!this.isDragging) return;
+        
+        this.isDragging = false;
+        
+        const image = this.getCurrentImage();
+        if (image) {
+            image.classList.remove('dragging');
+        }
+    }
+    
+    /**
+     * Обновляет позицию изображения с учетом ограничений
+     */
+    updatePosition(deltaX, deltaY) {
+        const image = this.getCurrentImage();
+        const container = document.querySelector('.gallery-content');
+        if (!image || !container) return;
+        
+        // Вычисляем новую позицию
+        const newTranslateX = this.translateX + deltaX;
+        const newTranslateY = this.translateY + deltaY;
+        
+        // Получаем размеры контейнера
+        const containerRect = container.getBoundingClientRect();
+        
+        // Получаем computed style для получения реальных размеров изображения
+        const computedStyle = window.getComputedStyle(image);
+        const imageWidth = parseFloat(computedStyle.width);
+        const imageHeight = parseFloat(computedStyle.height);
+        
+        // Вычисляем размеры увеличенного изображения
+        const scaledWidth = imageWidth * this.currentScale;
+        const scaledHeight = imageHeight * this.currentScale;
+        
+        // Вычисляем максимальные смещения
+        const maxTranslateX = Math.max(0, (scaledWidth - containerRect.width) / 2);
+        const maxTranslateY = Math.max(0, (scaledHeight - containerRect.height) / 2);
+        
+        // Ограничиваем смещение
+        this.translateX = Math.max(-maxTranslateX, Math.min(maxTranslateX, newTranslateX));
+        this.translateY = Math.max(-maxTranslateY, Math.min(maxTranslateY, newTranslateY));
+        
+        console.log('Position update:', {
+            scale: this.currentScale,
+            translateX: this.translateX,
+            translateY: this.translateY,
+            maxTranslateX,
+            maxTranslateY,
+            scaledWidth,
+            scaledHeight,
+            containerWidth: containerRect.width,
+            containerHeight: containerRect.height
+        });
+        
+        // Применяем трансформацию
+        this.applyTransform();
+    }
+    
+    /**
+     * Применяет трансформацию (масштаб + позицию) к изображению
+     */
+    applyTransform() {
+        const image = this.getCurrentImage();
+        if (!image) return;
+        
+        // Применяем трансформацию: translate потом scale для правильного позиционирования
+        image.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.currentScale})`;
+        image.style.transformOrigin = 'center center';
+        
+        if (!this.isDragging) {
+            image.style.transition = `transform ${this.settings.animationDuration}ms ease`;
+        } else {
+            image.style.transition = 'none';
+        }
+    }
+    
+    /**
+     * Сбрасывает позицию изображения
+     */
+    resetPosition() {
+        this.translateX = 0;
+        this.translateY = 0;
+        this.applyTransform();
+    }
     bindControlEvents() {
         if (!this.zoomControls) return;
         
@@ -232,7 +401,7 @@ class ZoomPlugin {
     zoomIn() {
         if (this.currentScale < this.settings.maxScale) {
             this.currentScale += this.settings.step;
-            this.applyZoom();
+            this.applyTransform();
         }
         this.updateControls();
     }
@@ -243,7 +412,9 @@ class ZoomPlugin {
     zoomOut() {
         if (this.currentScale > this.settings.minScale) {
             this.currentScale -= this.settings.step;
-            this.applyZoom();
+            // При уменьшении корректируем позицию
+            this.adjustPositionAfterZoom();
+            this.applyTransform();
         }
         this.updateControls();
     }
@@ -253,21 +424,51 @@ class ZoomPlugin {
      */
     resetZoom() {
         this.currentScale = 1;
-        this.applyZoom();
+        this.resetPosition();
         this.updateControls();
+    }
+    
+    /**
+     * Корректирует позицию после изменения масштаба
+     */
+    adjustPositionAfterZoom() {
+        const image = this.getCurrentImage();
+        const container = document.querySelector('.gallery-content');
+        if (!image || !container) return;
+        
+        // Если изображение стало меньше или равно оригинальному размеру, центрируем его
+        if (this.currentScale <= 1) {
+            this.resetPosition();
+            return;
+        }
+        
+        // Получаем размеры контейнера
+        const containerRect = container.getBoundingClientRect();
+        
+        // Получаем оригинальные размеры изображения (до масштабирования)
+        const imageRect = image.getBoundingClientRect();
+        const originalWidth = imageRect.width / this.currentScale;
+        const originalHeight = imageRect.height / this.currentScale;
+        
+        // Вычисляем размеры для нового масштаба
+        const newScaledWidth = originalWidth * this.currentScale;
+        const newScaledHeight = originalHeight * this.currentScale;
+        
+        // Вычисляем новые максимальные смещения
+        const maxTranslateX = Math.max(0, (newScaledWidth - containerRect.width) / 2);
+        const maxTranslateY = Math.max(0, (newScaledHeight - containerRect.height) / 2);
+        
+        // Ограничиваем текущую позицию новыми пределами
+        this.translateX = Math.max(-maxTranslateX, Math.min(maxTranslateX, this.translateX));
+        this.translateY = Math.max(-maxTranslateY, Math.min(maxTranslateY, this.translateY));
     }
     
     /**
      * Применяет текущий масштаб к изображению
      */
     applyZoom() {
-        const image = this.getCurrentImage();
-        if (!image) return;
-        
-        image.style.transform = `scale(${this.currentScale})`;
-        image.style.transformOrigin = 'center center';
-        image.style.transition = `transform ${this.settings.animationDuration}ms ease`;
-        
+        // Заменено на applyTransform() для совместимости с перетаскиванием
+        this.applyTransform();
         console.log(`Применен зум: ${this.currentScale}x`);
     }
     
@@ -292,12 +493,14 @@ class ZoomPlugin {
      */
     destroy() {
         this.removeZoomControls();
+        this.unbindMouseEvents();
         
         const image = this.getCurrentImage();
         if (image) {
             image.style.transform = '';
             image.style.transformOrigin = '';
             image.style.transition = '';
+            image.classList.remove('dragging');
         }
         
         // Отключаем observer
@@ -306,6 +509,7 @@ class ZoomPlugin {
         }
         
         this.isModalOpen = false;
+        this.resetPosition();
     }
 }
 
