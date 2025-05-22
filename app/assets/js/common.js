@@ -85,5 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
     },
   });
-  
+  if (gallery2.zoomPlugin) {
+    gallery2.zoomPlugin.init();
+  }
 });

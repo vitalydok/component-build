@@ -432,7 +432,7 @@ article
     transform: scale(0.8)
     opacity: 0
     overflow: hidden
-    transition: transform 0.3s $transition, opacity 0.3s $transition
+    transition: width 0.3s ease-out, height 0.3s ease-out
   &-overlay
     position: fixed
     top: 0
@@ -451,28 +451,41 @@ article
       opacity: 1
       visibility: visible
       .gallery-content
+        justify-items: center
         transform: scale(1)
         opacity: 1
+        width: 100%
+        height: 100%
+        align-content: center
   &-nav
-    position: absolute
-    top: 50%
-    transform: translateY(-50%)
-    background-color: rgba(0, 0, 0, 0.5)
-    border: none
-    color: white
-    width: 40px
-    height: 40px
-    border-radius: 50%
-    font-size: 20px
-    cursor: pointer
-    z-index: 10001
-    transition: background 0.2s ease
-    &:hover
-      background-color: rgba(0, 0, 0, 0.7)
-    &--left
-      left: 20px
-    &--right
-      right: 20px
+    display: none
+    @media (min-width: 592px)
+      display: block
+      position: absolute
+      top: 50%
+      transform: translateY(-50%)
+      width: fit-content
+      height: fit-content
+      cursor: pointer
+      button
+        border: none
+        color: white
+        width: 40px
+        height: 40px
+        border-radius: 50%
+        font-size: 20px
+        cursor: pointer
+        z-index: 10001
+        background-color: rgba(0, 0, 0, 0.5)
+        transition: background-color 0.2s ease
+        &:hover
+          background-color: rgba(0, 0, 0, 0.7)
+      &--left
+        left: 20px
+        padding: 20px 20px 20px 0px
+      &--right
+        right: 20px
+        padding: 20px 0px 20px 20px
   &-counter
     position: absolute
     bottom: 20px
@@ -485,42 +498,69 @@ article
     border-radius: 20px
   &-close
     position: absolute
-    top: 20px
-    right: 20px
-    background: none
-    border: none
-    color: white
-    font-size: 30px
+    top: 0
+    right: 0
+    padding: 20px
     cursor: pointer
     z-index: 10001
-  &-image
+    button
+      color: white
+      border: none
+      border-radius: 50%
+      width: 40px
+      height: 40px
+      font-size: 20px
+      display: flex
+      align-items: center
+      justify-content: center
+      background-color: rgba(0,0,0,0.5)
+      transition: background-color .3s ease
+      &:hover
+        background-color: rgba(0,0,0,0.8)
+
+  &-image, &-video
     max-width: 100%
     max-height: 80vh
     display: block
     margin: 0 auto
-    transition: all 0.3s ease
-    will-change: transform, opacity
-
-.gallery
-  max-width: 1200px
-  width: 100%
-  margin: 0 auto
-  gap: 16px
-  &__item
-    width: 40%
-    height: 300px
-    img
+    will-change: width, height, opacity
+    backface-visibility: hidden
+    object-fit: contain
+    transform-origin: center center
+    transition: all 0.3s ease-out
+    width: 100%
+    height: 100%
+    object-fit: contain
+    &-container
+      overflow: hidden
       width: 100%
       height: 100%
-      object-fit: cover
-      object-position: center
-  &__wrapper
-    width: 60%
-    display: flex
-    gap: 16px
-    .gallery__item
-      width: calc((100% - 48px) / 4)
-
+      display: flex
+      justify-content: center
+      align-items: center
+      cursor: grab
+  &-video
+    height: auto
+    aspect-ratio: 16 / 9
+  &-fade
+    &-out
+      opacity: 0 !important
+    &-in
+      opacity: 0
+      animation: galleryFadeIn 0.3s ease-out forwards
+  &-view-all
+    cursor: pointer
+  &-swipe-catcher
+    width: 100%
+    height: 100%
+    position: absolute
+    top: 0
+    left: 0
+    z-index: 999
+    pointer-events: auto
+    touch-action: pan-y
+  &-swipe-catcher.active
+    pointer-events: auto
 .menu-indicator 
   position: absolute
   bottom: 55px

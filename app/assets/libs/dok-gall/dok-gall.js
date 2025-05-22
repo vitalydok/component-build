@@ -375,21 +375,29 @@ class GalleryDok {
     }
 
     addNavigation(overlay, content, totalImages) {
-        const prevBtn = document.createElement('button');
+        const prevBtn = document.createElement('div');
         prevBtn.innerHTML = '&lt;';
         prevBtn.className = 'gallery-nav gallery-nav--left';
+        const prevBtnInner = document.createElement('button')
+        prevBtnInner.innerHTML = '&lt;';
+        prevBtn.appendChild(prevBtnInner);
         overlay.appendChild(prevBtn);
 
-        const nextBtn = document.createElement('button');
-        nextBtn.innerHTML = '&gt;';
+        const nextBtn = document.createElement('div');
         nextBtn.className = 'gallery-nav gallery-nav--right';
+        const nextBtnInner = document.createElement('button')
+        nextBtnInner.innerHTML = '&gt;';
+        nextBtn.appendChild(nextBtnInner);
         overlay.appendChild(nextBtn);
     }
 
     addCloseButton(overlay) {
-        const closeBtn = document.createElement('button');
-        closeBtn.innerHTML = '&times;';
+        const closeBtn = document.createElement('div');
+
         closeBtn.className = 'gallery-close';
+        const closeBtnInner = document.createElement('button')
+        closeBtnInner.innerHTML = '&times;';
+        closeBtn.appendChild(closeBtnInner);
         overlay.appendChild(closeBtn);
     }
 
