@@ -428,7 +428,7 @@ article
   &-content
     position: relative
     max-width: 90%
-    max-height: 90%
+    max-height: 80vh
     transform: scale(0.8)
     opacity: 0
     overflow: hidden
@@ -520,7 +520,7 @@ article
 
   &-image, &-video
     max-width: 100%
-    max-height: 80vh
+    max-height: 100%
     display: block
     margin: 0 auto
     will-change: width, height, opacity
@@ -528,8 +528,6 @@ article
     object-fit: contain
     transform-origin: center center
     transition: all 0.3s ease-out
-    width: 100%
-    height: 100%
     object-fit: contain
     &-container
       overflow: hidden
@@ -540,6 +538,8 @@ article
       align-items: center
       cursor: grab
   &-video
+    width: 100%
+    height: 100%
     height: auto
     aspect-ratio: 16 / 9
   &-fade
@@ -561,7 +561,7 @@ article
     touch-action: pan-y
   &-swipe-catcher.active
     pointer-events: auto
-.menu-indicator 
+.menu-indicator
   position: absolute
   bottom: 55px
   left: 50%
@@ -581,12 +581,12 @@ article
       z-index: 5
       animation: cursor-animation 1.2s cubic-bezier(0.230, 1.000, 0.720, 1.000) infinite
       @keyframes cursor-animation
-          0%
-            left: 100px
-            transform: rotate(30deg)
-          100%
-            left: 40px
-            transform: rotate(0deg)
+        0%
+          left: 100px
+          transform: rotate(30deg)
+        100%
+          left: 40px
+          transform: rotate(0deg)
 .box-wrapper
   width: 150px
   overflow: hidden
@@ -596,21 +596,22 @@ article
   margin-right: auto
   $widthOfBox: 3em
   .box-outer
-      position: relative
-      top: calc(50% - 1em)
-      animation: box-animation 1.2s cubic-bezier(0.230, 1.000, 0.720, 1.000) infinite
-      @keyframes box-animation
-          0%
-            left: 0px
+    position: relative
+    top: calc(50% - 1em)
+    animation: box-animation 1.2s cubic-bezier(0.230, 1.000, 0.720, 1.000) infinite
+    @keyframes box-animation
+      0%
+        left: 0px
 
-          100%
-            left: -5em
+      100%
+        left: -5em
   .box
-      position: absolute
-      width: $widthOfBox
-      height: 2em
-      border-radius: 3px
-      border: 1px solid #555
-      @for $i from 0 through 3
-          &:nth-of-type(#{$i})
-              left: 4.25em * $i
+    position: absolute
+    width: $widthOfBox
+    height: 2em
+    border-radius: 3px
+    border: 1px solid #555
+    @for $i from 0 through 3
+      &:nth-of-type(#{$i})
+        left: 4.25em * $i
+

@@ -303,6 +303,50 @@ class ZoomPlugin {
     }
     
     /**
+     * Вычисляет реальные размеры отображаемого изображения с учетом object-fit: contain
+     */
+    getDisplayedImageSize(image, container) {
+        const containerRect = container.getBoundingClientRect();
+        const naturalWidth = image.naturalWidth || image.width;
+        const naturalHeight = image.naturalHeight || image.height;
+        
+        if (!naturalWidth || !naturalHeight) {
+            return {
+                width: containerRect.width,
+                height: containerRect.height,
+                offsetX: 0,
+                offsetY: 0
+            };
+        }
+        
+        // Вычисляем соотношения сторон
+        const containerAspect = containerRect.width / containerRect.height;
+        const imageAspect = naturalWidth / naturalHeight;
+        
+        let displayWidth, displayHeight, offsetX = 0, offsetY = 0;
+        
+        // Определяем как изображение вписывается в контейнер (object-fit: contain)
+        if (imageAspect > containerAspect) {
+            // Изображение шире относительно контейнера - ограничиваем по ширине
+            displayWidth = containerRect.width;
+            displayHeight = containerRect.width / imageAspect;
+            offsetY = (containerRect.height - displayHeight) / 2;
+        } else {
+            // Изображение выше относительно контейнера - ограничиваем по высоте
+            displayHeight = containerRect.height;
+            displayWidth = containerRect.height * imageAspect;
+            offsetX = (containerRect.width - displayWidth) / 2;
+        }
+        
+        return {
+            width: displayWidth,
+            height: displayHeight,
+            offsetX: offsetX,
+            offsetY: offsetY
+        };
+    }
+
+    /**
      * Обновляет позицию изображения с учетом ограничений
      */
     updatePosition(deltaX, deltaY) {
@@ -317,34 +361,47 @@ class ZoomPlugin {
         // Получаем размеры контейнера
         const containerRect = container.getBoundingClientRect();
         
-        // Получаем computed style для получения реальных размеров изображения
-        const computedStyle = window.getComputedStyle(image);
-        const imageWidth = parseFloat(computedStyle.width);
-        const imageHeight = parseFloat(computedStyle.height);
+        // Получаем реальные отображаемые размеры изображения
+        const displayedSize = this.getDisplayedImageSize(image, container);
         
         // Вычисляем размеры увеличенного изображения
-        const scaledWidth = imageWidth * this.currentScale;
-        const scaledHeight = imageHeight * this.currentScale;
+        const scaledWidth = displayedSize.width * this.currentScale;
+        const scaledHeight = displayedSize.height * this.currentScale;
         
-        // Вычисляем максимальные смещения
-        const maxTranslateX = Math.max(0, (scaledWidth - containerRect.width) / 2);
-        const maxTranslateY = Math.max(0, (scaledHeight - containerRect.height) / 2);
+        // Вычисляем границы перетаскивания
+        // Логика: увеличенное изображение не должно выходить за границы контейнера
+        let maxTranslateX = 0;
+        let maxTranslateY = 0;
+        
+        if (scaledWidth > containerRect.width) {
+            // Если увеличенное изображение шире контейнера
+            maxTranslateX = (scaledWidth - containerRect.width) / 2;
+        }
+        
+        if (scaledHeight > containerRect.height) {
+            // Если увеличенное изображение выше контейнера
+            maxTranslateY = (scaledHeight - containerRect.height) / 2;
+        }
         
         // Ограничиваем смещение
         this.translateX = Math.max(-maxTranslateX, Math.min(maxTranslateX, newTranslateX));
         this.translateY = Math.max(-maxTranslateY, Math.min(maxTranslateY, newTranslateY));
         
-        console.log('Position update:', {
-            scale: this.currentScale,
-            translateX: this.translateX,
-            translateY: this.translateY,
-            maxTranslateX,
-            maxTranslateY,
-            scaledWidth,
-            scaledHeight,
-            containerWidth: containerRect.width,
-            containerHeight: containerRect.height
-        });
+        // console.log('Position update:', {
+        //     scale: this.currentScale,
+        //     translateX: this.translateX,
+        //     translateY: this.translateY,
+        //     maxTranslateX,
+        //     maxTranslateY,
+        //     scaledWidth,
+        //     scaledHeight,
+        //     displayedWidth: displayedSize.width,
+        //     displayedHeight: displayedSize.height,
+        //     containerWidth: containerRect.width,
+        //     containerHeight: containerRect.height,
+        //     imageOffsetX: displayedSize.offsetX,
+        //     imageOffsetY: displayedSize.offsetY
+        // });
         
         // Применяем трансформацию
         this.applyTransform();
@@ -445,22 +502,47 @@ class ZoomPlugin {
         // Получаем размеры контейнера
         const containerRect = container.getBoundingClientRect();
         
-        // Получаем оригинальные размеры изображения (до масштабирования)
-        const imageRect = image.getBoundingClientRect();
-        const originalWidth = imageRect.width / this.currentScale;
-        const originalHeight = imageRect.height / this.currentScale;
+        // Получаем реальные отображаемые размеры изображения
+        const displayedSize = this.getDisplayedImageSize(image, container);
         
         // Вычисляем размеры для нового масштаба
-        const newScaledWidth = originalWidth * this.currentScale;
-        const newScaledHeight = originalHeight * this.currentScale;
+        const newScaledWidth = displayedSize.width * this.currentScale;
+        const newScaledHeight = displayedSize.height * this.currentScale;
         
-        // Вычисляем новые максимальные смещения
+        // Вычисляем новые максимальные смещения относительно контейнера
         const maxTranslateX = Math.max(0, (newScaledWidth - containerRect.width) / 2);
         const maxTranslateY = Math.max(0, (newScaledHeight - containerRect.height) / 2);
         
         // Ограничиваем текущую позицию новыми пределами
         this.translateX = Math.max(-maxTranslateX, Math.min(maxTranslateX, this.translateX));
         this.translateY = Math.max(-maxTranslateY, Math.min(maxTranslateY, this.translateY));
+    }
+
+    /**
+     * Добавим метод для зума с центрированием по курсору (разработка)
+     */
+    zoomToPoint(scale, clientX, clientY) {
+        const image = this.getCurrentImage();
+        const container = document.querySelector('.gallery-content');
+        if (!image || !container) return;
+        
+        const containerRect = container.getBoundingClientRect();
+        
+        // Вычисляем позицию курсора относительно центра контейнера
+        const cursorX = clientX - containerRect.left - containerRect.width / 2;
+        const cursorY = clientY - containerRect.top - containerRect.height / 2;
+        
+        // Вычисляем новую позицию с учетом точки зума
+        const scaleRatio = scale / this.currentScale;
+        this.translateX = cursorX - (cursorX - this.translateX) * scaleRatio;
+        this.translateY = cursorY - (cursorY - this.translateY) * scaleRatio;
+        
+        this.currentScale = Math.max(this.settings.minScale, Math.min(this.settings.maxScale, scale));
+        
+        // Корректируем позицию после зума
+        this.adjustPositionAfterZoom();
+        this.applyTransform();
+        this.updateControls();
     }
     
     /**

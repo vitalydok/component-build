@@ -4,7 +4,7 @@
   &-content
     position: relative
     max-width: 90%
-    max-height: 90%
+    max-height: 80vh
     transform: scale(0.8)
     opacity: 0
     overflow: hidden
@@ -96,7 +96,7 @@
 
   &-image, &-video
     max-width: 100%
-    max-height: 80vh
+    max-height: 100%
     display: block
     margin: 0 auto
     will-change: width, height, opacity
@@ -104,8 +104,6 @@
     object-fit: contain
     transform-origin: center center
     transition: all 0.3s ease-out
-    width: 100%
-    height: 100%
     object-fit: contain
     &-container
       overflow: hidden
@@ -116,6 +114,8 @@
       align-items: center
       cursor: grab
   &-video
+    width: 100%
+    height: 100%
     height: auto
     aspect-ratio: 16 / 9
   &-fade
