@@ -1,4 +1,4 @@
-class GalleryDok {
+class Pictura {
     constructor(options = {}) {
         // Настройки по умолчанию
         this.defaults = {
@@ -783,7 +783,7 @@ class GalleryDok {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = GalleryDok;
+    module.exports = Pictura;
 } else if (typeof window !== 'undefined') {
-    window.GalleryDok = GalleryDok;
+    window.Pictura = Pictura;
 }

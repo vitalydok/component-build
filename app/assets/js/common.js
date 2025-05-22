@@ -1,19 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const gallery = new GalleryDok({
-    gallerySelector: '[data-gallery-one]',
-    transitionEffect: 'fade',
-    effects: {
-      fade: {
-        duration: 500
-      }
-    },
-    keyboardNavigation: true,
-    wheelNavigation: true,
-    touchNavigation: true,
-    counter: true
-  });
-
-  const gallery2 = new GalleryDok({
+  const gallery = new Pictura({
     gallerySelector: '.gallery-page, [data-gallery-two], .video',
     transitionEffect: 'zoom',
     plugins: {
@@ -23,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
     },
   });
-  if (gallery2.zoomPlugin) {
-    gallery2.zoomPlugin.init();
+  if (gallery.zoomPlugin) {
+    gallery.zoomPlugin.init();
   }
 });
