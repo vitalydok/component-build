@@ -322,10 +322,10 @@ class ZoomPlugin {
      */
     getDisplayedImageSize(image, container) {
         const containerRect = container.getBoundingClientRect();
-        const naturalWidth = image.naturalWidth || image.width;
-        const naturalHeight = image.naturalHeight || image.height;
+        const clientWidth = image.clientWidth || image.width;
+        const clientHeight = image.clientHeight || image.height;
         
-        if (!naturalWidth || !naturalHeight) {
+        if (!clientWidth || !clientHeight) {
             return {
                 width: containerRect.width,
                 height: containerRect.height,
@@ -336,7 +336,7 @@ class ZoomPlugin {
         
         // Вычисляем соотношения сторон
         const containerAspect = containerRect.width / containerRect.height;
-        const imageAspect = naturalWidth / naturalHeight;
+        const imageAspect = clientWidth / clientHeight;
         
         let displayWidth, displayHeight, offsetX = 0, offsetY = 0;
         
@@ -576,10 +576,10 @@ class ZoomPlugin {
         if (!image) return; // fallback
         
         // Если изображение еще не загрузилось, ждем загрузки
-        if (!image.naturalWidth || !image.naturalHeight) {
+        if (!image.clientWidth || !image.clientHeight) {
             return new Promise((resolve) => {
                 const checkLoad = () => {
-                    if (image.naturalWidth && image.naturalHeight) {
+                    if (image.clientWidth && image.clientHeight) {
                         resolve(this.calculateImageSize(image));
                     } else {
                         setTimeout(checkLoad, 50);
@@ -626,7 +626,7 @@ class ZoomPlugin {
             displayHeight = displayWidth / imageAspect;
         } else {
             // Изображение выше - ограничиваем по высоте
-            displayHeight = Math.min(maxHeight, naturalHeight);
+            displayHeight = Math.min(maxHeight, clientHeight);
             displayWidth = displayHeight * imageAspect;
         }
         
