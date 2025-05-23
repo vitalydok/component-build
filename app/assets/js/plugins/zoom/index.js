@@ -447,6 +447,7 @@ class ZoomPlugin {
         this.translateY = 0;
         this.applyTransform();
     }
+    
     bindControlEvents() {
         if (!this.zoomControls) return;
         
@@ -573,7 +574,7 @@ class ZoomPlugin {
         const image = this.getCurrentImage();
         const container = document.querySelector('.gallery-content');
         
-        if (!image) return; // fallback
+        if (!image) return { width: '100%', height: '100%' }; // fallback
         
         // Если изображение еще не загрузилось, ждем загрузки
         if (!image.clientWidth || !image.clientHeight) {
