@@ -4,7 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     transitionEffect: 'fade',
     plugins: {
       zoom: {
-        maxScale: 4,
+        maxScale: 3,
+        step: 1,
         controlsEnabled: true
       },
     },
