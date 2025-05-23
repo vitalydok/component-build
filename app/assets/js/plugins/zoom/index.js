@@ -476,6 +476,9 @@ class ZoomPlugin {
             this.setContainerZoomMode(this.isZoomActive());
             this.applyTransform();
         }
+
+        this.bindMouseEvents();
+
         this.updateControls();
     }
     
